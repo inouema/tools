@@ -1,12 +1,12 @@
-OBJS=	elf_disp_sec_size
+OBJS=	elf_disp_sec_size.elf
 
 all :	$(OBJS)
 
-elf_disp_sec_size :	elf_disp_sec_size.c
+elf_disp_sec_size.elf :	elf_disp_sec_size.c
 	echo "% gcc -c elf_disp_sec_size.c -Wall" > elf_disp_sec_size.comp
 	gcc -c elf_disp_sec_size.c -Wall >> elf_disp_sec_size.comp 2>&1
 	echo "% gcc elf_disp_sec_size.o -Wall -o elf_disp_sec_size" >> elf_disp_sec_size.comp
-	gcc elf_disp_sec_size.o -Wall -o elf_disp_sec_size >> elf_disp_sec_size.comp 2>&1
+	gcc elf_disp_sec_size.o -Wall -o elf_disp_sec_size.elf >> elf_disp_sec_size.comp 2>&1
 
 elfdump.exec :	elfdump elfsamp
 	echo "% ./elfdump elfsamp" > elfdump.exec
