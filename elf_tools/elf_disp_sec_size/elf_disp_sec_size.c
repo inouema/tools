@@ -54,23 +54,49 @@ static int elfdump(char *head)
     if (!strcmp(sname, ".strtab")) str = shdr;
   }
 
-  /* 特定セクションの合計サイズを表示 */
-  printf("Sections Size:\n");
-  for (i = 0; i < ehdr->e_shnum; i++) { /* セクションヘッダテーブルを検索 */
-    shdr = (Elf_Shdr *)(head + ehdr->e_shoff + ehdr->e_shentsize * i);
-    sname = (char *)(head + shstr->sh_offset + shdr->sh_name);
-    if (!strcmp(sname, ".text")){
-        size = (shdr->sh_type != SHT_NOBITS) ? shdr->sh_size : 0;
-        romsize += size;
+
+    int size_text = 0;
+    int size_rodata = 0;
+    int size_rwdata = 0;
+    int size_bss = 0;
+    int size_tk_ram_text = 0;
+    int size_tk_ram_rodata = 0;
+
+    /* 特定セクションの合計サイズを表示 */
+    printf("Sections Size:\n");
+    for (i = 0; i < ehdr->e_shnum; i++) { /* セクションヘッダテーブルを検索 */
+        shdr = (Elf_Shdr *)(head + ehdr->e_shoff + ehdr->e_shentsize * i);
+        sname = (char *)(head + shstr->sh_offset + shdr->sh_name);
+    
+        if (!strcmp(sname, ".text")){
+            size_text = (shdr->sh_type != SHT_NOBITS) ? shdr->sh_size : 0;
+        }
+        if (!strcmp(sname, ".rodata")){
+            size_rodata = (shdr->sh_type != SHT_NOBITS) ? shdr->sh_size : 0;
+        }
+        if (!strcmp(sname, ".rwdata")){
+            size_rwdata = (shdr->sh_type != SHT_NOBITS) ? shdr->sh_size : 0;
+        }
+        if (!strcmp(sname, ".bss")){
+            size_bss = (shdr->sh_type != SHT_NOBITS) ? shdr->sh_size : 0;
+        }
+        if (!strcmp(sname, ".tk_ram_text")){
+            size_tk_ram_text = (shdr->sh_type != SHT_NOBITS) ? shdr->sh_size : 0;
+        }
+        if (!strcmp(sname, ".tk_ram_rodata")){
+            size_tk_ram_rodata = (shdr->sh_type != SHT_NOBITS) ? shdr->sh_size : 0;
+        }
+        if (!strcmp(sname, ".strtab")) str = shdr;
     }
-    if (!strcmp(sname, ".rodata")){
-        size = (shdr->sh_type != SHT_NOBITS) ? shdr->sh_size : 0;
-        romsize += size;
-    }
-    if (!strcmp(sname, ".strtab")) str = shdr;
-  }
-  printf("\t Section's \thex-size(byte)\n");
-  printf("\t.text + .rodata\t0x%x\n", romsize);
+
+    printf("\t   \t=== Section size ===                           hex(byte) dec(byte)\n");
+    
+    printf("\t[1]\t.text + .rodata                                0x%x      %d\n", size_text + size_rodata,
+                                                                              size_text + size_rodata);
+    printf("\t[2]\t.tk_ram_text + .tk_ram_rodata                  0x%x      %d\n", size_tk_ram_text + size_tk_ram_rodata,
+                                                                              size_tk_ram_text + size_tk_ram_rodata);
+    printf("\t[3]\t.tk_ram_text + .tk_ram_rodata + .bss + .rwdata 0x%x      %d\n", size_tk_ram_text + size_tk_ram_rodata + size_bss + size_rwdata,
+                                                                              size_tk_ram_text + size_tk_ram_rodata + size_bss + size_rwdata);
 
   /* セグメント一覧を表示 */
   printf("Segments:\n");
@@ -88,6 +114,7 @@ static int elfdump(char *head)
     printf("\n");
   }
 
+#if 0
   /* シンボル名一覧を表示 */
   printf("Symbols:\n");
   for (i = 0; i < ehdr->e_shnum; i++) { /* シンボルテーブルを検索 */
@@ -102,6 +129,7 @@ static int elfdump(char *head)
 	     (char *)(head + str->sh_offset + symp->st_name));
     }
   }
+#endif
 
 #if 0
   /* 再配置するシンボル一覧を表示 */
