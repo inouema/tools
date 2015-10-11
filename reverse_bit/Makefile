@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O -Wall -W -I./ -S
+CFLAGS = -O -Wall -W -I./
 LDFLAGS =
 LIBS = 
 OBJS = main.o reverse_bit.o
