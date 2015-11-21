@@ -3,6 +3,14 @@
 set -ux
 LANG=C
 
+
+# stop snmpd
+/etc/init.d/snmpd stop
+
+# change community name
+
+
+
 # $1: community name
 # $2: dist ip address
 # $3: dist port num
