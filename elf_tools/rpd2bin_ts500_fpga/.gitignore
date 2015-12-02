@@ -3,3 +3,4 @@
 !/rpd2bin_ts500_fpga.c
 !/linuxelf.h
 !/Makefile
+!test_data/

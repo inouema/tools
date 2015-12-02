@@ -82,6 +82,7 @@ static int rpd2bin(FILE *fp_rpd, FILE *fp_bin)
 	int j=0;
 	const uint8_t dummy[1] = {0};
 	uint8_t rpd_data[4] = {0,0,0,0};
+	uint8_t rpd_swap_byte[4] = {0,0,0,0};
 	      
 	int bin_file_size = 0;
 	
@@ -120,7 +121,6 @@ static int rpd2bin(FILE *fp_rpd, FILE *fp_bin)
 	printf("bin_file_size:%d byte(dec)\n", bin_file_size);
 
 
-
 	/* RPDファイルのサイズを取得する */
 	fseek(fp_rpd, 0, SEEK_END);
 	rpd_size_byte = ftell(fp_rpd);
@@ -131,31 +131,49 @@ static int rpd2bin(FILE *fp_rpd, FILE *fp_bin)
 	word_remain = rpd_size_byte % 4;
 	
 	
-	fseek(fp_rpd, 0, SEEK_SET);
-	fseek(fp_bin, 0, SEEK_SET);
+	fseek(fp_rpd, 0,                    SEEK_SET);
+	fseek(fp_bin, IPL_DATA_HEADER_SIZE, SEEK_SET);
 	
 	/* 4バイトごと読み進めるので /4 しておく */
 	rpd_fread_word_step = rpd_size_byte / 4;
 	
 	for (i=0; i<rpd_fread_word_step; i++) {
 		
+		if (i==8704)
+			dprintf("i=%d\n", i);
+
 		/* RPDファイルから 4バイト読み出し */
 		fread(rpd_data, sizeof(uint8_t), ARRAY_SIZE(rpd_data), fp_rpd);
-		
-		/* 1バイト毎に MSB/LSB変換 */
-		for (j=0; j<ARRAY_SIZE(rpd_data); i++) {
+	
+		if (i==8704)	
+			dprintf("rpd       0x%02x 0x%02x 0x%02x 0x%02x\n", rpd_data[0],rpd_data[1],rpd_data[2],rpd_data[3]);
+
+		/* 1バイト毎に MSB/LSB変換(bit swap) */
+		for (j=0; j<ARRAY_SIZE(rpd_data); j++) {
 			rpd_data[j] = reverse_bit8(rpd_data[j]);
 		}
 
-		/* スワップ */
-		swap(rpd_data[0], rpd_data[3]);
-		swap(rpd_data[1], rpd_data[2]);
+		if (i==8704)	
+			dprintf("swap bit  0x%02x 0x%02x 0x%02x 0x%02x\n", rpd_data[0],rpd_data[1],rpd_data[2],rpd_data[3]);
+
+		/* do, byte swap. */
+		//swap(rpd_data[0], rpd_data[3]);
+		//swap(rpd_data[1], rpd_data[2]);
+		rpd_swap_byte[3] = rpd_data[0];
+		rpd_swap_byte[2] = rpd_data[1];
+		rpd_swap_byte[1] = rpd_data[2];
+		rpd_swap_byte[0] = rpd_data[3];
+
+
+		if (i==8704)	
+			dprintf("swap byte 0x%02x 0x%02x 0x%02x 0x%02x\n", rpd_swap_byte[0],rpd_swap_byte[1],rpd_swap_byte[2],rpd_swap_byte[3]);
 
 		/* 4バイトを書き込む */
-		fwrite(&rpd_data, sizeof(uint8_t), ARRAY_SIZE(rpd_data), fp_bin);
+		//fwrite(&rpd_data, sizeof(uint8_t), ARRAY_SIZE(rpd_data), fp_bin);
+		fwrite(rpd_swap_byte, sizeof(uint8_t), ARRAY_SIZE(rpd_swap_byte), fp_bin);
 		
 	}
-
+	
 	/*
 	 * 16bit check sum 算出
 	 */
@@ -170,15 +188,15 @@ static int rpd2bin(FILE *fp_rpd, FILE *fp_bin)
 		fread(&read_data, 1, 1, fp_bin);
 		
 		check_sum_32 += read_data;
-		dprintf("check_sum_16:0x%04x\n", check_sum_16);
+		//dprintf("check_sum_16:0x%04x\n", check_sum_16);
 	}
 	
 	/* データ部のチェックサムを書き込む */
 	check_sum_16 = (check_sum_32 & 0x0000FFFF);
 	write_bin_check_sum(fp_bin, check_sum_16);
 	
-	printf("\n");
-	printf("data_block's check_sum_16:0x%04x\n", check_sum_16);
+	dprintf("\n");
+	dprintf("data_block's check_sum_16:0x%04x\n", check_sum_16);
 
 	/* データ部のサイズを書き込む */
 	write_bin_data_size(fp_bin, bin_file_size - IPL_DATA_HEADER_SIZE);
