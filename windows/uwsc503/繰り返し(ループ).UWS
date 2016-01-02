@@ -1,6 +1,0 @@
-While True
-    Call jmeter-play.UWS
-    Sleep(300)          					 // 300•b‚ÌŠÔ‚ðŽæ‚é
-    Call jmeter-stop.UWS
-    Sleep(10)							// 60•b‚ÌŠÔ‚ðŽæ‚é
-Wend

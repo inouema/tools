@@ -1,4 +1,0 @@
-While True
-    Call click.UWS
-    Sleep(200)          					 // 10•b‚ÌŠÔ‚ðŽæ‚é
-Wend
