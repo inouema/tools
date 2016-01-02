@@ -1,0 +1,33 @@
+improve_dos_test.diff #-no_kaoriya
+disable_regexp_logs.diff #-no_kaoriya
+fix-7.4.193-typo-in-tests.diff #+sent
+1001-fix_test100_windows.diff
+X010-autoload_cache.diff #+experiments
+0000-kaoriya_marks.diff #-no_kaoriya
+0001-rich_icon.diff #-no_kaoriya
+0100-embed_manifest.diff #-no_kaoriya
+0101-po_install_all.diff #-no_kaoriya
+2001-improve_modelines.diff #-no_kaoriya
+2002-windows_transparency.diff #-no_kaoriya
+2003-charspace.diff #-no_kaoriya
+2004-caption_switch.diff #-no_kaoriya
+2005-ambiwidth_auto.diff #-no_kaoriya
+2006-init_winsock.diff #-no_kaoriya
+2008-sentence_until_punctuation.diff #-no_kaoriya
+2010-imaf_imsf_on_cui.diff #-no_kaoriya
+2520-migemo_feature.diff #-no_kaoriya
+2530-guess_encode_feature.diff #-no_kaoriya
+4001-ftp_autolink_2html.diff #-no_kaoriya
+4002-japanese_punctuation_javadoc.diff #-no_kaoriya
+X001-direct_write-r3.diff #-no_kaoriya
+X003-csearch_highlight.diff #+experiments
+X004-eval_rmdir.diff #+experiments
+X004_01-rmdir_support_symlinks.diff #+experiments
+X005-eval_marks.diff #+experiments
+X006-enc_considered_setenv.diff #+experiments
+X007-make_compact_func.diff #+experiments
+X008-async_job.diff #+experiments
+X009-lasteol_impl.diff #+experiments
+2000-efficient_printing.diff #+obsoletes
+2007-refactor_vim_strchr.diff #+obsoletes
+2510-uimfep_support.diff #-no_kaoriya #+obsoletes

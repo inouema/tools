@@ -1,0 +1,186 @@
+# HG changeset patch
+# Parent 7a880421811b8eb6a0c6316a3866acbfc5bfd4bb
+Support UIMFEP as IM control
+
+diff -r 7a880421811b src/config.h.in
+--- a/src/config.h.in	Thu Jul 04 08:57:25 2013 +0900
++++ b/src/config.h.in	Thu Jul 04 08:58:40 2013 +0900
+@@ -386,6 +386,9 @@
+ /* Define if you want to include XIM support. */
+ #undef FEAT_XIM
+ 
++/* Define if you want to include UIMFEP support. */
++#undef FEAT_UIMFEP
++
+ /* Define if you want to include Hangul input support. */
+ #undef FEAT_HANGULIN
+ 
+diff -r 7a880421811b src/configure.in
+--- a/src/configure.in	Thu Jul 04 08:57:25 2013 +0900
++++ b/src/configure.in	Thu Jul 04 08:58:40 2013 +0900
+@@ -2555,6 +2555,19 @@
+   fi
+ fi
+ 
++dnl Check --disable-uimfep option.
++AC_MSG_CHECKING(--disable-uimfep argument)
++AC_ARG_ENABLE(uimfep,
++	[  --disable-uimfep        Don't support UIMFEP.],,
++	[enable_uimfep="yes"])
++if test "$enable_uimfep" = "yes"; then
++  AC_MSG_RESULT(no)
++  AC_DEFINE(FEAT_UIMFEP)
++else
++  AC_MSG_RESULT(yes)
++fi
++
++
+ dnl Checks for libraries and include files.
+ 
+ AC_CACHE_CHECK([whether toupper is broken], [vim_cv_toupper_broken],
+diff -r 7a880421811b src/mbyte.c
+--- a/src/mbyte.c	Thu Jul 04 08:57:25 2013 +0900
++++ b/src/mbyte.c	Thu Jul 04 08:58:40 2013 +0900
+@@ -113,6 +113,12 @@
+ # include <wchar.h>
+ #endif
+ 
++#if defined(FEAT_UIMFEP) || defined(PROTO)
++static int uimfep_lastmode = 1;
++static void uimfep_set_active __ARGS((int active));
++static int uimfep_get_status __ARGS((void));
++#endif
++
+ #if 0
+ /* This has been disabled, because several people reported problems with the
+  * wcwidth() and iswprint() library functions, esp. for Hebrew. */
+@@ -4460,6 +4466,14 @@
+ {
+     int was_active;
+ 
++#ifdef FEAT_UIMFEP
++    if (!gui.in_use)
++    {
++	uimfep_set_active(active);
++	return;
++    }
++#endif
++
+     was_active = !!im_get_status();
+     im_is_active = (active && !p_imdisable);
+ 
+@@ -5265,6 +5279,10 @@
+     int
+ im_get_status(void)
+ {
++#ifdef FEAT_UIMFEP
++    if (!gui.in_use)
++	return uimfep_get_status();
++#endif
+ #  ifdef FEAT_EVAL
+     if (p_imsf[0] != NUL)
+     {
+@@ -5318,7 +5336,13 @@
+     int		active;
+ {
+     if (xic == NULL)
++    {
++#ifdef FEAT_UIMFEP
++	if (!gui.in_use)
++	    uimfep_set_active(active);
++#endif
+ 	return;
++    }
+ 
+     /* If 'imdisable' is set, XIM is never active. */
+     if (p_imdisable)
+@@ -5753,6 +5777,11 @@
+     int
+ im_get_status()
+ {
++#ifdef FEAT_UIMFEP
++    if (!gui.in_use)
++	return uimfep_get_status();
++#endif
++
+     return xim_has_focus;
+ }
+ 
+@@ -6325,3 +6354,66 @@
+     return retval;
+ }
+ #endif
++
++#if defined(FEAT_UIMFEP)
++    static void
++uimfep_set_active(int active)
++{
++    int mustfree = 0;
++    char_u *setmode;
++    setmode = vim_getenv("UIM_FEP_SETMODE", &mustfree);
++    if (setmode != NULL)
++    {
++	FILE *fp = fopen(setmode, "w");
++	if (fp)
++	{
++	    fprintf(fp, "%d\n", active ? uimfep_lastmode : 0);
++	    fflush(fp);
++	    fclose(fp);
++	}
++    }
++    if (mustfree)
++	vim_free(setmode);
++}
++
++    static int
++uimfep_get_status(void)
++{
++    int mustfree = 0;
++    int mode = 0;
++    char_u *getmode;
++    getmode = vim_getenv("UIM_FEP_GETMODE", &mustfree);
++    if (getmode != NULL)
++    {
++	FILE *fp = fopen(getmode, "r");
++	if (fp)
++	{
++	    char_u buf[99];
++	    if (fgets(buf, sizeof(buf), fp))
++		mode = atoi(buf);
++	    fclose(fp);
++	}
++    }
++    if (mustfree)
++	vim_free(getmode);
++    if (mode != 0)
++	uimfep_lastmode = mode;
++    return mode != 0;
++}
++
++# if defined(USE_IM_CONTROL) && (!defined(FEAT_XIM) \
++	&& !defined(FEAT_MBYTE_IME) && !defined(GLOBAL_IME))
++    void
++im_set_active(int active)
++{
++    uimfep_set_active(active);
++}
++
++    int
++im_get_status(void)
++{
++    return uimfep_get_status();
++}
++# endif
++
++#endif /* defined(FEAT_UIMFEP) */
+diff -r 7a880421811b src/vim.h
+--- a/src/vim.h	Thu Jul 04 08:57:25 2013 +0900
++++ b/src/vim.h	Thu Jul 04 08:58:40 2013 +0900
+@@ -550,6 +550,7 @@
+  * Check input method control.
+  */
+ #if defined(FEAT_XIM) \
++    || defined(FEAT_UIMFEP) \
+     || (defined(FEAT_GUI) && (defined(FEAT_MBYTE_IME) || defined(GLOBAL_IME))) \
+     || (defined(FEAT_GUI_MAC) && defined(FEAT_MBYTE))
+ # define USE_IM_CONTROL

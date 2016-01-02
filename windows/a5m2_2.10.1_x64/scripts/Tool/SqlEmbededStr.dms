@@ -1,0 +1,162 @@
+﻿//	SQLエディタ - ソース文字列生成(Script版)
+/*
+■このスクリプトについて
+  A5:SQL Mk-2にはJavaやC#、VBなどのソースににSQL文字列を埋め込むためのソース文字
+列の生成機能があります。これは単に静的な文字列リテラルを生成します。各言語に有る
+ようなStringBuilderやStringBufferを使っていないのは、文字列の結合演算子("+"とか"&"
+とか)はコンパイル時に演算子が処理されて結合された結果のみ実行ファイルに埋め込まれ
+るため結果的に速いためです。
+
+  とはいっても、プロジェクトのコード規約で「SQL等の複数行文字列は、StringBuilder
+を使って扱うこと！！」などと決まってしまっている場合は都合が悪いことがあり、スク
+リプトを作ってみました。
+（さりげなくプロジェクトリーダーにStringBuilder使うと遅いですよと教えてあげましょう。）
+
+■使い方
+  各*.dmsファイルがa5m2.exe のディレクトリを基準にして scripts\tool のディレクト
+リに配置してください。
+  
+  A5:SQL Mk-2でSQLエディタを開いて編集し、メニューより[ツール(T)] - 
+[SQLエディタ - ソース文字列生成] を実行して下さい。クリップボードにソース文字列が
+生成されます。
+
+  実行時にはSQLエディタがアクティブウィンドウ（アクティブタブ）になっている必要が
+あります。
+*/
+
+function choose() {
+	var nConvMode = 0;
+	var frmChoose = new VCLForm();
+	frmChoose.ClientWidth = 240;
+	frmChoose.ClientHeight = 150;
+	frmChoose.Caption = "ソース文字列生成";
+
+	var btJava = new VCLButton(frmChoose);
+	btJava.parent = frmChoose;
+	btJava.Left = 20;
+	btJava.Top = 20;
+	btJava.Width = 200;
+	btJava.Caption = "Java (StringBuilder, StringBuffer)";
+	btJava.onClick = function() { nConvMode = 1; frmChoose.close(); };
+
+	var btCS = new VCLButton(frmChoose);
+	btCS.parent = frmChoose;
+	btCS.Left = 20;
+	btCS.Top = 50;
+	btCS.Width = 200;
+	btCS.Caption = "C# (StringBuilder)";
+	btCS.onClick = function() { nConvMode = 2; frmChoose.close(); };
+
+	var btVB = new VCLButton(frmChoose);
+	btVB.parent = frmChoose;
+	btVB.Left = 20;
+	btVB.Top = 80;
+	btVB.Width = 200;
+	btVB.Caption = "VB.net (StringBuilder)";
+	btVB.onClick = function() { nConvMode = 3; frmChoose.close(); };
+
+	var btDelphi = new VCLButton(frmChoose);
+	btDelphi.parent = frmChoose;
+	btDelphi.Left = 20;
+	btDelphi.Top = 110;
+	btDelphi.Width = 200;
+	btDelphi.Caption = "Delphi (TStrings)";
+	btDelphi.onClick = function() { nConvMode = 4; frmChoose.close(); };
+
+	frmChoose.showModal();
+	return nConvMode;
+}
+
+
+function escapeC(str) {
+	var sResult = "";
+	var nIdx = 0;
+	var nMax = str.length;
+	for (nIdx = 0; nIdx < nMax; nIdx++) {
+		var ch = str.charAt(nIdx);
+		if (ch == "\"") {
+			sResult = sResult + "\\\"";
+		}
+		else if (ch == "\\") {
+			sResult = sResult + "\\\\";
+		}
+		else  {
+			sResult = sResult + ch;
+		}
+	}
+	return sResult;
+}
+
+function escapeVB(str) {
+	var sResult = "";
+	var nIdx = 0;
+	var nMax = str.length;
+	for (nIdx = 0; nIdx < nMax; nIdx++) {
+		var ch = str.charAt(nIdx);
+		if (ch == "\"") {
+			sResult = sResult + "\"\"";
+		}
+		else  {
+			sResult = sResult + ch;
+		}
+	}
+	return sResult;
+}
+
+function escapeDelphi(str) {
+	var sResult = "";
+	var nIdx = 0;
+	var nMax = str.length;
+	for (nIdx = 0; nIdx < nMax; nIdx++) {
+		var ch = str.charAt(nIdx);
+		if (ch == "'") {
+			sResult = sResult + "''";
+		}
+		else  {
+			sResult = sResult + ch;
+		}
+	}
+	return sResult;
+}
+
+var frmSql = application.getActiveWindow();
+
+if (frmSql.formType != "A5SqlEditor") {
+	alert("アクティブウィンドウをSQLエディタにしてから実行してください。(1)");
+	exit();
+}
+var sources = frmSql.source;
+if (!sources) {
+	alert("アクティブウィンドウをSQLエディタにしてから実行してください。(2)");
+	exit();
+}
+
+
+
+
+var nChoose = choose();
+
+var ssSources = new Strings();
+
+ssSources.text = frmSql.source;
+
+var nIdx;
+if (nChoose == 1) {
+	for (nIdx = 0; nIdx < ssSources.count; nIdx++) {
+	    ssSources[nIdx] = "\tsb.append(\"" + escapeC(ssSources[nIdx]) + "\\n\");";
+	}
+} else if (nChoose == 2) {
+	for (nIdx = 0; nIdx < ssSources.count; nIdx++) {
+	    ssSources[nIdx] = "\tsb.AppendLine(\"" + escapeC(ssSources[nIdx]) + "\");";
+	}
+} else if (nChoose == 3) {
+	for (nIdx = 0; nIdx < ssSources.count; nIdx++) {
+	    ssSources[nIdx] = "\tsb.AppendLine(\"" + escapeVB(ssSources[nIdx]) + "\")";
+	}
+} else if (nChoose == 4) {
+	for (nIdx = 0; nIdx < ssSources.count; nIdx++) {
+	    ssSources[nIdx] = "\tss.Add('" + escapeDelphi(ssSources[nIdx]) + "');";
+	}
+}
+
+Clipboard.asText = ssSources.text;

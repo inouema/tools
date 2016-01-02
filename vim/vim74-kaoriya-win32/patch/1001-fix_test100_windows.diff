@@ -1,0 +1,30 @@
+# HG changeset patch
+# Parent df869837901c5ea46333bd9b5b8c4d082ee952d7
+
+diff -r df869837901c src/testdir/test100.in
+--- a/src/testdir/test100.in	Sun Mar 30 12:16:27 2014 +0900
++++ b/src/testdir/test100.in	Sun Mar 30 12:17:00 2014 +0900
+@@ -18,6 +18,7 @@
+ :call FillBuffer()
+ :call feedkeys(":earlier 10\n", 't')
+ :call UndoLevel()
++:set ff=unix
+ :%w! test.out
+ :new two
+ :0put ='TWO: expecting global undolevels: 5, local undolevels: 2 (first) then 10 (afterwards)'
+@@ -27,6 +28,7 @@
+ :call UndoLevel()
+ :setlocal ul=10
+ :call UndoLevel()
++:set ff=unix
+ :%w >> test.out
+ :wincmd p
+ :redir >>test.out | echo "global value shouldn't be changed and still be 5!" | echo 'ONE: expecting global undolevels: 5, local undolevels: -123456 (default)'|:setglobal undolevels? | echon ' global' | setlocal undolevels? | echon ' local' |echo "" |redir end
+@@ -35,6 +37,7 @@
+ :1put ='global value should be changed to 50'
+ :2put ='THREE: expecting global undolevels: 50, local undolevels: -123456 (default)'
+ :call UndoLevel()
++:set ff=unix
+ :%w >> test.out
+ :"sleep 10
+ :"

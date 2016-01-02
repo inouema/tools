@@ -1,0 +1,52 @@
+# HG changeset patch
+# Parent 11a0e24cd813069265cc94a83161e5e468405e15
+embed manifest file to EXE and DLL when available (for MSVC9)
+
+diff -r 11a0e24cd813 src/Make_mvc.mak
+--- a/src/Make_mvc.mak	Sat Apr 13 23:44:21 2013 +0900
++++ b/src/Make_mvc.mak	Sat Apr 13 23:45:11 2013 +0900
+@@ -949,6 +949,7 @@
+ 		$(LUA_OBJ) $(MZSCHEME_OBJ) $(PERL_OBJ) $(PYTHON_OBJ) $(PYTHON3_OBJ) $(RUBY_OBJ) \
+ 		$(TCL_OBJ) $(SNIFF_OBJ) $(CSCOPE_OBJ) $(NETBEANS_OBJ) \
+ 		$(XPM_OBJ) $(OUTDIR)\version.obj $(LINKARGS2)
++	IF EXIST $@.manifest mt -nologo -manifest $@.manifest gvim.exe.mnf -outputresource:$@;1
+ 
+ $(VIM): $(VIM).exe
+ 
+@@ -963,14 +964,17 @@
+ 
+ uninstal.exe: uninstal.c
+ 	$(CC) /nologo -DNDEBUG -DWIN32 uninstal.c shell32.lib advapi32.lib
++	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+ vimrun.exe: vimrun.c
+ 	$(CC) /nologo -DNDEBUG vimrun.c
++	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+ xxd/xxd.exe: xxd/xxd.c
+ 	cd xxd
+ 	$(MAKE) /NOLOGO -f Make_mvc.mak
+ 	cd ..
++	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+ GvimExt/gvimext.dll: GvimExt/gvimext.cpp GvimExt/gvimext.rc GvimExt/gvimext.h
+ 	cd GvimExt
+@@ -988,6 +992,7 @@
+ 	- if exist $(OUTDIR)/nul $(DEL_TREE) $(OUTDIR)
+ 	- if exist *.obj del *.obj
+ 	- if exist $(VIM).exe del $(VIM).exe
++	- if exist $(VIM).exe.manifest del $(VIM).exe.manifest
+ 	- if exist $(VIM).ilk del $(VIM).ilk
+ 	- if exist $(VIM).pdb del $(VIM).pdb
+ 	- if exist $(VIM).map del $(VIM).map
+diff -r 11a0e24cd813 src/xxd/Make_mvc.mak
+--- a/src/xxd/Make_mvc.mak	Sat Apr 13 23:44:21 2013 +0900
++++ b/src/xxd/Make_mvc.mak	Sat Apr 13 23:45:11 2013 +0900
+@@ -5,6 +5,7 @@
+ 
+ xxd.exe: xxd.c
+      cl /nologo -DWIN32 xxd.c
++     IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+ # This was for an older compiler
+ #    cl /nologo -DWIN32 xxd.c /link setargv.obj

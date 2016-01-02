@@ -1,0 +1,23 @@
+//	お気に入りをエクスポート
+
+function favoritesExport() {
+	var sDBName = application.dbTree.getSelectedDatabaseName();
+	var regini = new RegIni("Software\\mmatsubara\\A5M2\\DataSources\\" + sDBName + ".params");
+	var ssAllKeys = regini.readSection("favorites");
+
+	var ssAllFavorites = new Strings();
+
+	for (var nIdx = 0; nIdx < ssAllKeys.length; nIdx++) {
+		ssAllFavorites.add(ssAllKeys[nIdx] + "=" + regini.read("favorites", ssAllKeys[nIdx], ''));
+	}
+
+	var dialog = new Dialog("お気に入りエクスポートファイル *.a5fav|*.a5fav");
+
+	var sFileName = dialog.saveFile("お気に入り保存先", sDBName + ".a5fav");
+
+	if (sFileName != null) {
+		ssAllFavorites.saveToFile(sFileName);
+	}
+}
+
+favoritesExport();

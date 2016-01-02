@@ -1,0 +1,19 @@
+//	カレントスキーマの全テーブルのレコード件数を数える。
+var conn = application.dbTree.getSelectedDatabaseConnection();
+var schemaName = conn.getSchemaName();
+// println("カレントスキーマ : " + schemaName);
+var tableList;
+if ((isUndefined(schemaName) == false) && (schemaName != ''))
+	tableList = conn.getTableList(schemaName);
+else
+	tableList = conn.getTableList();
+var sql = "";
+for (var idx = 0; idx < tableList.length; idx++) {
+	if (idx == 0) {
+    	sql = "select '" + tableList[idx] + "' as TABLE_NAME, count(*) as REC_COUNT from " + tableList[idx];
+    } else {
+    	sql = sql + "\nunion all select '" + tableList[idx] + "', count(*) from " + tableList[idx];
+    }
+}
+var sqlEditor = application.newSqlEditor(sql);
+//	sqlEditor.runSql(1);

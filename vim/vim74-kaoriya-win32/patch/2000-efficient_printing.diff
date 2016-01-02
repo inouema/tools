@@ -1,0 +1,34 @@
+# HG changeset patch
+# Parent 8b3e091983d3b4fae077ced1137a8ee954aff11e
+skip GDI no-effect requests for printing
+
+diff -r 8b3e091983d3 src/os_mswin.c
+--- a/src/os_mswin.c	Fri Apr 12 02:19:29 2013 +0900
++++ b/src/os_mswin.c	Fri Apr 12 02:25:38 2013 +0900
+@@ -1628,10 +1628,26 @@
+     int
+ mch_print_text_out(char_u *p, int len)
+ {
++    int		do_out = 1;
+ #ifdef FEAT_PROPORTIONAL_FONTS
+     SIZE	sz;
+ #endif
+ 
++    /* A space character without background color is not needed to be drawn.
++     * This is expected to reduce data size and speed up when printing. */
++    if (GetBkMode(prt_dlg.hDC) == TRANSPARENT)
++    {
++	int i;
++
++	do_out = 0;
++	for (i = 0; i < len; ++i)
++	    if (p[i] != ' ')
++	    {
++		do_out = 1;
++		break;
++	    }
++    }
++    if (do_out)
+     TextOut(prt_dlg.hDC, prt_pos_x + prt_left_margin,
+ 					  prt_pos_y + prt_top_margin, p, len);
+ #ifndef FEAT_PROPORTIONAL_FONTS

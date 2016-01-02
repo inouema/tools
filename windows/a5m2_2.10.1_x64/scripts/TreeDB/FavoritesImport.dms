@@ -1,0 +1,29 @@
+//	お気に入りをインポート
+
+function favoritesImport() {
+	var sDBName = application.dbTree.getSelectedDatabaseName();
+
+	var dialog = new Dialog("お気に入りエクスポートファイル *.a5fav|*.a5fav");
+	var sFileName = dialog.openFile("お気に入り読み込み元", sDBName + ".a5fav");
+
+	if (sFileName != null) {
+		var regini = new RegIni("Software\\mmatsubara\\A5M2\\DataSources\\" + sDBName + '.params');
+		regini.eraseSection("favorites");
+
+		var ssAllFavorites = new Strings();
+		ssAllFavorites.loadFromFile(sFileName);
+
+		for (var nIdx = 0; nIdx < ssAllFavorites.length; nIdx++) {
+			var sFavorites = ssAllFavorites[nIdx];
+			var nPos = sFavorites.indexOf("=");
+			var sFavName = sFavorites.substring(0, nPos);
+			var sFavValue = sFavorites.substring(nPos + 1);
+			
+			regini.write("favorites", sFavName, sFavValue);
+		}
+		
+		application.dbTree.reload();
+	}
+}
+
+favoritesImport();

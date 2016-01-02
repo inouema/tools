@@ -1,0 +1,51 @@
+# HG changeset patch
+# Parent 17043ccfead32989affef6dc247043a496abd967
+refactor (and little speed improvement) vim_strchr()
+
+diff -r 17043ccfead3 -r bf0b31d6c719 src/misc2.c
+--- a/src/misc2.c	Sat Apr 13 22:19:45 2013 +0900
++++ b/src/misc2.c	Sat Apr 13 22:29:12 2013 +0900
+@@ -1884,36 +1884,17 @@
+ 
+     p = string;
+ #ifdef FEAT_MBYTE
+-    if (enc_utf8 && c >= 0x80)
++    if (has_mbyte)
+     {
++	char_u	bytes[MB_MAXBYTES];
++	int	len = (*mb_char2bytes)(c, bytes);
++
+ 	while (*p != NUL)
+ 	{
+-	    if (utf_ptr2char(p) == c)
++	    if (p[0] == bytes[0]
++		    && (len <= 1 || vim_memcmp(p, bytes, len) == 0))
+ 		return p;
+-	    p += (*mb_ptr2len)(p);
+-	}
+-	return NULL;
+-    }
+-    if (enc_dbcs != 0 && c > 255)
+-    {
+-	int	n2 = c & 0xff;
+-
+-	c = ((unsigned)c >> 8) & 0xff;
+-	while ((b = *p) != NUL)
+-	{
+-	    if (b == c && p[1] == n2)
+-		return p;
+-	    p += (*mb_ptr2len)(p);
+-	}
+-	return NULL;
+-    }
+-    if (has_mbyte)
+-    {
+-	while ((b = *p) != NUL)
+-	{
+-	    if (b == c)
+-		return p;
+-	    p += (*mb_ptr2len)(p);
++	    mb_ptr_adv(p);
+ 	}
+ 	return NULL;
+     }

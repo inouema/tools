@@ -1,0 +1,8 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhist_cnt =6
+let g:netrw_dirhist_1='U:/var/logger/vr-ip/vriplinux-810/vriplinux/check_arch'
+let g:netrw_dirhist_2='C:/home/inouema/Dropbox'
+let g:netrw_dirhist_3='C:/home/inouema'
+let g:netrw_dirhist_4='C:/home/inouema/Dropbox'
+let g:netrw_dirhist_5='C:/home/inouema/Dropbox/Changelog'
+let g:netrw_dirhist_6='C:/home/inouema/Dropbox/tools/linux/shell-script'

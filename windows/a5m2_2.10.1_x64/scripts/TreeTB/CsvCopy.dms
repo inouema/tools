@@ -1,0 +1,16 @@
+//	CSVイメージにしてクリップボードへコピー
+var sTableName = application.dbTree.getSelectedItemName();	//	スキーマ名.テーブル名
+var conn = application.dbTree.getSelectedDatabaseConnection();
+var rs = conn.executeQuery('select * from ' + sTableName);
+
+//var rs = application.getActiveWindow().resultSet;
+var ss = new Strings();
+rs.first();
+while (rs.eof() == false) {
+	ss.add(rs.toCsvRecord());
+	rs.next();
+}
+
+Clipboard.asText = ss.text;
+
+rs.close();

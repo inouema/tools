@@ -1,0 +1,98 @@
+//	インサート文を作る
+/*
+  2009/03/18 m.matsubara
+  A5:SQL Mk-2 
+  Version 2.3
+
+■このスクリプトについて
+　このスクリプトはテーブルのデータをinsert文として出力するスクリプトです。
+  
+■使い方
+  a5m2.exe のディレクトリを基準にして scripts\TreeTB のディレクトリにに配置して
+ください。
+
+  A5:SQL Mk-2でMySQLに接続し、ER図をリバース生成した直後に、データベースツリー
+より、テーブルを右クリックして [アドオンメニュー(X)] - [インサート文を作る] を
+選択してください。
+
+■備考
+　簡単な動作確認しか行っていないので、動作に問題がある場合は、各々で修正してくだ
+さい。
+　日付のフォーマットに関してはもう少し考慮が必要かもしれません。
+*/
+
+//	シングルクォートが現れた場合、２個のシングルクォートに変換する
+function escapeSQL(str) {
+	var sResult = "";
+	var nIdx = 0;
+	var nMax = str.length;
+	for (nIdx = 0; nIdx < nMax; nIdx++) {
+		var ch = str.charAt(nIdx);
+		if (ch == "'") {
+			sResult = sResult + "''";
+		}
+		else  {
+			sResult = sResult + ch;
+		}
+	}
+	return sResult;
+}
+
+
+function main()
+{
+	//	データベース接続
+	var conn = application.dbTree.getSelectedDatabaseConnection();
+	//	スキーマ名.テーブル名
+	var sTableName = application.dbTree.getSelectedItemName();
+	//	select文を実行
+	var rs = conn.executeQuery('select * from ' + sTableName);
+	//	insert文のStrings
+	var ss = new Strings();
+	rs.first();
+	while (rs.eof() == false) {
+		//	カラム数
+		var max = rs.getFieldCount();
+		//	各カラムの値をカンマで区切ったもの
+		var rowData = '';
+		for (var idx = 0; idx < max; idx++) {
+			//	カラムの型
+			var columnType = rs.getFieldType(idx);
+			//	カラムの値（またはNULLという文字列）
+			var columnData;
+			if (rs.isNull(idx)) {
+				columnData = 'NULL';
+			} else {
+				columnData = rs.getFieldValue(idx);
+				switch (columnType) {
+				case application.ftSmallint:
+				case application.ftInteger:
+				case application.ftWord:
+				case application.ftBoolean:
+				case application.ftFloat:
+				case application.ftCurrency:
+				case application.ftBCD:
+					break;
+				default:
+					//	数値型でないならシングルクォートで括る
+					columnData = "'" + escapeSQL("" + columnData) + "'";
+				}
+			}
+			if (idx == 0)
+				rowData = columnData;
+			else
+				rowData = rowData + "," + columnData;
+		}
+		//	insert文を追加
+		ss.add("insert into " + sTableName + " values (" + rowData + ");");
+		rs.next();
+	}
+
+	//	新しいSQLエディタを開き、insert文を表示する
+	application.newSqlEditor(ss.text);
+	//Clipboard.asText = ss.text;
+
+	rs.close();
+}
+
+main();

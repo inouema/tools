@@ -1,0 +1,88 @@
+//	Oracle ビューのソースを保存
+/*
+  2008/11/30 m.matsubara
+  A5:SQL Mk-2 
+  Version 2.2 ～ 2.3
+
+■このスクリプトについて
+　このスクリプトはOracleのカレントスキーマに有るビューのソースをまとめて指定のデ
+ィレクトリに保存するものです。
+  
+■使い方
+  a5m2.exe のディレクトリを基準にして scripts\TreeDB のディレクトリにに配置して
+ください。
+
+  A5:SQL Mk-2でMySQLに接続し、ER図をリバース生成した直後に、データベースツリーを
+右クリックして [アドオンメニュー(X)] - [Oracle ビューのソースを保存] を選択してく
+ださい。
+
+■備考
+　このスクリプトはOracle専用です。Oracle XEにて動作確認されています。
+
+  処理内容は USER_VIEWS データディクショナリを利用して、カレントスキーマのビュー
+のソースを取得し、ファイルに書き出しています。マテリアライズドビューについては出
+力されません。
+
+  USER_VIEWS の代わりに ALL_VIEWS データディクショナリを利用すれば、複数スキーマ
+にも対応できるかと思われますが、「Oracle Provider for OLEDB」を利用した場合、ソー
+スが100バイト程度で切れてしまう現象を確認しています。
+
+　作成されたソースファイルは、SQL*PLUSにて実行されることを前提としています。A5:SQL Mk-2
+から実行するときは２箇所の「ssSources.add("/");」の行をコメントアウトしてください。
+
+　作成されたファイルは SQL*PLUS から、 create_user_views.ddl ファイルを実行するこ
+とでまとめて登録できます。（このファイルとすべてのSQLファイルをカレントディレクト
+リに配置して実行します）
+
+　簡単な動作確認しか行っていないので、動作に問題がある場合は、各々で修正してくだ
+さい。
+
+*/
+
+
+//	保存先決定
+var sFolder = Dialog.openFolder("ビューソースの保存先を選んでください");
+
+if (sFolder == null)
+	exit();	//	ダイアログでキャンセルが選択された場合
+
+if (sFolder[sFolder.length - 1] != "\\")	
+	sFolder = sFolder + "\\";
+
+//	カレントユーザーのプロシージャのソースを得る
+var conn = application.dbTree.getSelectedDatabaseConnection();
+//	ビューの名前と内容を取り出すSQL
+var sSql = "select VIEW_NAME, TEXT from USER_VIEWS order by VIEW_NAME";
+
+var nCounter = 0;							//	出力したビューの数
+var rs = conn.executeQuery(sSql);			//	結果セット
+var ssCreateUserProcedures = new Strings();	//	create_user_procedure.ddl の内容
+var ssSources = new Strings();				//	ビューの内容
+
+rs.first();
+while (!rs.eof()) {
+	var sViewName = rs.getFieldValue("VIEW_NAME");	//	ビューの名前
+    var sText = rs.getFieldValue("TEXT");	//	ビューの内容
+    
+    ssSources.clear();
+    ssSources.add("create or replace view " + sViewName + " as");
+    ssSources.add(sText);
+//	ssSources.add(";");
+	ssSources.add("/");	//	SQL*PLUS で「実行」を行うために出力している
+	ssSources.saveToFile(sFolder + sViewName + ".sql");
+	ssSources.clear();
+	ssCreateUserProcedures.add("prompt " + sViewName + ".sql");
+	ssCreateUserProcedures.add("@" + sViewName + ".sql");
+	nCounter++;
+
+	rs.next();
+}
+rs.close();
+
+if (nCounter != 0) {
+	ssCreateUserProcedures.saveToFile(sFolder + "create_user_views.ddl");
+	alert("" + nCounter + " 個のビューソースを出力しました");
+}
+else
+	alert("ビューは見つかりませんでした");
+

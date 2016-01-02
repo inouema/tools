@@ -1,0 +1,109 @@
+//	Oracle ストアドプロシージャのソースを保存
+/*
+  2008/11/30 m.matsubara
+  A5:SQL Mk-2 
+  Version 2.2 ～ 2.3
+
+■このスクリプトについて
+　このスクリプトはOracleのカレントスキーマに有るビューのソースをまとめて指定のデ
+ィレクトリに保存するものです。
+  
+■使い方
+  a5m2.exe のディレクトリを基準にして scripts\TreeDB のディレクトリにに配置して
+ください。
+
+  A5:SQL Mk-2でMySQLに接続し、ER図をリバース生成した直後に、データベースツリーを
+右クリックして [アドオンメニュー(X)] - [Oracle ストアドプロシージャのソースを保存]
+を選択してください。
+
+■備考
+　このスクリプトはOracle専用です。Oracle XEにて動作確認されています。
+
+  処理内容は USER_SOURCE データディクショナリを利用して、カレントスキーマのスト
+アドプロシージャのソースを取得し、ファイルに書き出しています。
+
+  USER_SOURCEの代わりにALL_SOURCE データディクショナリを利用すれば、複数スキーマ
+にも対応できるかと思われます。
+
+　作成されたソースファイルは、SQL*PLUSにて実行されることを前提としています。A5:SQL Mk-2
+から実行するときは２箇所の「ssSources.add("/");」の行をコメントアウトしてくださ
+い。
+
+　作成されたファイルは SQL*PLUS から、 create_user_procedures.ddl ファイルを実行
+することでまとめて登録できます。
+（このファイルとすべてのSQLファイルをカレントディレクトリに配置して実行します）
+
+　簡単な動作確認しか行っていないので、動作に問題がある場合は、各々で修正してくだ
+さい。
+
+*/
+
+
+//	保存先決定
+var sFolder = Dialog.openFolder("ストアドプロシージャソースの保存先を選んでください");
+
+if (sFolder == null)
+	exit();	//	ダイアログでキャンセルが選択された場合
+
+if (sFolder[sFolder.length - 1] != "\\")	
+	sFolder = sFolder + "\\";
+
+//	カレントユーザーのプロシージャのソースを得る
+var conn = application.dbTree.getSelectedDatabaseConnection();
+//	ストアドプロシージャの名前と内容を取り出すSQL（内容は１行ごとに取り出される）
+var sSql = "select NAME, LINE, TEXT from USER_SOURCE where TYPE='PROCEDURE' or TYPE='FUNCTION' order by NAME, LINE";
+
+var nCounter = 0;							//	出力したストアドプロシージャの数
+var sProcedureName = "";					//	現在処理中のストアドプロシージャの名前
+var rs = conn.executeQuery(sSql);			//	結果セット
+var ssCreateUserProcedures = new Strings();	//	create_user_procedure.ddl の内容
+var ssSources = new Strings();				//	ストアドプロシージャの内容
+
+rs.first();
+while (!rs.eof()) {
+	if (sProcedureName != rs.getFieldValue("NAME")) {
+    	//	次のプロシージャに変わったので、ssSourceにたまっているソースをファイルに出力する
+		if (sProcedureName != "") {
+//			ssSources.add(";");
+			ssSources.add("/");	//	SQL*PLUS で「実行」を行うために出力している
+            ssSources.saveToFile(sFolder + sProcedureName + ".sql");
+			ssSources.clear();
+			ssCreateUserProcedures.add("prompt " + sProcedureName + ".sql");
+			ssCreateUserProcedures.add("@" + sProcedureName + ".sql");
+			ssCreateUserProcedures.add("show error");
+			nCounter++;
+		}
+		sProcedureName = rs.getFieldValue("NAME");
+	}
+
+    //	1行ずつ読み取って、ssSourcesに追加していく
+    var sLine = rs.getFieldValue("TEXT");
+    sLine = sLine.trimRight();	//	改行がついているので消す
+    if (rs.getFieldValue("LINE") == 1)
+		ssSources.add("create or replace " + sLine);	//	１行目には create をつける
+    else
+		ssSources.add(sLine);
+
+	rs.next();
+}
+rs.close();
+
+if (sProcedureName != "") {
+   	//	最後のソースをファイルに出力する
+//	ssSources.add(";");
+	ssSources.add("/");		//	SQL*PLUS で「実行」を行うために出力している
+	ssSources.saveToFile(sFolder + sProcedureName + ".sql");
+	ssSources.clear();
+	ssCreateUserProcedures.add("prompt " + sProcedureName + ".sql");
+	ssCreateUserProcedures.add("@" + sProcedureName + ".sql");
+	ssCreateUserProcedures.add("show error");
+	nCounter++;
+}
+
+if (nCounter != 0) {
+	ssCreateUserProcedures.saveToFile(sFolder + "create_user_procedures.ddl");
+	alert("" + nCounter + " 個のストアドプロシージャソースを出力しました");
+}
+else
+	alert("ストアドプロシージャは見つかりませんでした");
+

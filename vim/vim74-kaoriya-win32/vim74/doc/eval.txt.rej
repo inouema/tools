@@ -1,0 +1,18 @@
+--- runtime/doc/eval.txt
++++ runtime/doc/eval.txt
+@@ -4880,13 +4880,13 @@
+ 		If you want a list to remain unmodified make a copy first: >
+ 			:let revlist = reverse(copy(mylist))
+ 
+-							*rmdir()*
+-rmdir({dname} [, {flags}])
++rmdir({dname} [, {flags}])				*rmdir()*
+ 		Remove a directory {dname}.  Return 0 for success, otherwise
+ 		return non-zero value.  If the directory contains any files or
+ 		sub-directories, this function will fail, when no {flags}
+ 		specified.  When "r" is given as {flags}, it remove the
+ 		directory and its contents recursively.
++		This function is not available in the |sandbox|.
+ 
+ round({expr})							*round()*
+ 		Round off {expr} to the nearest integral value and return it

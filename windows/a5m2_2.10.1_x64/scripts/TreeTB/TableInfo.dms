@@ -1,0 +1,17 @@
+//	テーブル情報
+
+function tableInfo() {
+	var conn = application.dbTree.getSelectedDatabaseConnection();
+	
+	var sTableName = application.dbTree.getSelectedItemName();	//	スキーマ名.テーブル名
+	
+	var columnList = conn.getTableColumnList(sTableName);
+	
+	var sInfo = '';
+	for (var nIdx = 0; nIdx < columnList.length; nIdx++) {
+		sInfo = sInfo + columnList[nIdx].columnName + ' ' + columnList[nIdx].type.toString() + ' ' + columnList[nIdx].size.toString() + "\n";
+	}
+	alert(sInfo);
+}
+
+tableInfo();

@@ -1,0 +1,12 @@
+//  カレントスキーマの全テーブルを開く
+
+function openSchemaTable() {
+	var conn = application.dbTree.getSelectedDatabaseConnection();
+	var tableList = conn.getTableList(conn.getSchemaName());
+	for (var idx = 0; idx < tableList.length; idx++) {
+      println(tableList[idx]);
+	  application.openTableEditor(conn, tableList[idx]);
+	}
+}
+
+openSchemaTable();
